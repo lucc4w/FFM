@@ -141,6 +141,28 @@ function renderStations() {
   });
 }
 
+function updateMediaSession(station) {
+  if ('mediaSession' in navigator && station) {
+    const tags = station.tags ? station.tags.split(",").slice(0, 2).join(", ") : "";
+    const genre = tags || station.language || "Rádio Online";
+    const location = station.state || station.country || "Brasil";
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: station.name,
+      artist: `${location} • ${genre}`,
+      artwork: [
+        { src: station.favicon || 'https://ffm.lucc4w.space/logo.png', sizes: '512x512', type: 'image/png' }
+      ]
+    });
+
+    // Sincroniza os botões do player do Android com o seu site
+    navigator.mediaSession.setActionHandler('play', playCurrent);
+    navigator.mediaSession.setActionHandler('pause', pauseCurrent);
+    navigator.mediaSession.setActionHandler('previoustrack', () => moveStation(-1));
+    navigator.mediaSession.setActionHandler('nexttrack', () => moveStation(1));
+  }
+}
+
 async function selectStation(index) {
   const station = state.stations[index];
   if (!station) return;
@@ -163,6 +185,11 @@ async function playCurrent() {
     state.isPlaying = true;
     playButton.classList.remove("is-paused");
     setStatus("Tocando ao vivo");
+
+    // LINHA ADICIONADA: Atualiza os dados na notificação do Android
+    updateMediaSession(state.stations[state.activeIndex]);
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
+
   } catch (error) {
     state.isPlaying = false;
     playButton.classList.add("is-paused");
@@ -175,6 +202,8 @@ function pauseCurrent() {
   state.isPlaying = false;
   playButton.classList.add("is-paused");
   setStatus("Pausado");
+
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "paused";
 }
 
 function setActiveCard() {
