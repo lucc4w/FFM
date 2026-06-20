@@ -4,27 +4,39 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FFM</title>
+  <title>FFM — Rádios do Brasil</title>
+  <meta name="description"
+    content="FFM é um player de rádios online do Brasil. Busque e ouça suas estações favoritas diretamente no navegador, sem instalar nada." />
+
+  <!-- Preconnect para performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://de1.api.radio-browser.info" />
+  <link rel="preconnect" href="https://nl1.api.radio-browser.info" />
+  <link rel="preconnect" href="https://at1.api.radio-browser.info" />
+
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
   <header class="site-header">
     <nav class="site-nav" aria-label="Menu principal">
-      <a href="#inicio">Inicio</a>
-      <a href="#radios">Radios</a>
-      <a href="#sobre">Sobre</a>
+      <a href="#inicio" id="nav-inicio">Início</a>
+      <a href="#radios" id="nav-radios">Rádios</a>
+      <a href="#sobre" id="nav-sobre">Sobre</a>
     </nav>
   </header>
 
-  <main id="inicio" class="stage">
-    <section class="hero" aria-labelledby="app-title">
-      <div class="brand-badge" aria-hidden="true">FFM</div>
-      <h1 id="app-title" class="sr-only">FFM</h1>
+  <main class="stage">
+    <section id="inicio" class="hero" aria-labelledby="app-title">
+      <img src="logo.png" alt="FFM Logo" class="brand-badge" />
+      <h1 id="app-title" class="sr-only">FFM — Rádios do Brasil</h1>
     </section>
 
-    <section id="radios" class="radio-console" aria-label="Buscar e ouvir radios">
+    <section id="radios" class="radio-console" aria-label="Buscar e ouvir rádios">
       <form class="search-box" id="search-form">
         <label class="sr-only" for="search-input">Buscar estação</label>
         <div class="search-control">
@@ -37,13 +49,13 @@
       <p class="now-playing" id="now-playing">Escolha sua estação preferida.</p>
 
       <div class="player-shell">
-        <button class="skip-button" id="previous-button" type="button" aria-label="Radio anterior">
+        <button class="skip-button" id="previous-button" type="button" aria-label="Rádio anterior">
           <span class="previous-icon"></span>
         </button>
-        <button class="play-button" id="play-button" type="button" aria-label="Tocar ou pausar">
-          <span class="pause-icon"></span>
+        <button class="play-button is-paused" id="play-button" type="button" aria-label="Tocar ou pausar">
+          <span class="play-pause-icon" aria-hidden="true"></span>
         </button>
-        <button class="skip-button next" id="next-button" type="button" aria-label="Proxima radio">
+        <button class="skip-button next" id="next-button" type="button" aria-label="Próxima rádio">
           <span class="next-icon"></span>
         </button>
 
@@ -59,18 +71,26 @@
         </div>
       </div>
 
-      <div class="status-line" id="status-line" role="status">Carregando radios do Brasil...</div>
+      <div class="status-line" id="status-line" role="status">Carregando rádios do Brasil...</div>
 
       <div class="station-list" id="station-list" aria-live="polite"></div>
+
+      <div class="load-more-wrapper" id="load-more-wrapper" hidden>
+        <button class="load-more-button" id="load-more-button" type="button">Carregar mais rádios</button>
+      </div>
     </section>
 
     <section id="sobre" class="info-section">
       <h2>FFM</h2>
       <p>
-        lucc4w &copy; 2026.
+        Um player simples e direto para ouvir rádios online de todo o Brasil.
+        Busque por nome, estado ou estilo musical e curta ao vivo, sem instalar nada.
+      </p>
+      <p class="info-credit">
+        Feito por <strong>@lucc4w</strong> &copy; 2026. Dados via
+        <a href="https://www.radio-browser.info" target="_blank" rel="noopener noreferrer">Radio Browser</a>.
       </p>
     </section>
-
   </main>
 
   <audio id="audio-player" crossorigin="anonymous"></audio>

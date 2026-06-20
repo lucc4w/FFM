@@ -1,35 +1,49 @@
+/* ── API ────────────────────────────────────────────────────────────── */
 const API_BASES = [
   "https://de1.api.radio-browser.info/json/stations/search",
   "https://nl1.api.radio-browser.info/json/stations/search",
   "https://at1.api.radio-browser.info/json/stations/search",
 ];
 
-const state = {
-  stations: [],
-  allStations: [],
-  activeIndex: -1,
-  isPlaying: false,
-  apiIndex: 0,
-  displayCount: 10,
+const FETCH_HEADERS = {
+  "User-Agent": "FFM/1.0 (https://ffm.lucc4w.space)",
+  "Accept": "application/json",
 };
 
-const form = document.querySelector("#search-form");
-const input = document.querySelector("#search-input");
-const stationList = document.querySelector("#station-list");
-const statusLine = document.querySelector("#status-line");
-const nowPlaying = document.querySelector("#now-playing");
-const audio = document.querySelector("#audio-player");
-const playButton = document.querySelector("#play-button");
+/* ── State ──────────────────────────────────────────────────────────── */
+const state = {
+  allStations:       [],
+  displayStations:   [],
+  favorites:         JSON.parse(localStorage.getItem("ffm_favorites") || "[]"),
+  activeIndex:       -1,
+  activeStationUuid: null,
+  isPlaying:         false,
+  apiIndex:          0,
+  displayCount:      10,
+  hasMoreStations:   false,
+};
+
+/* ── DOM References ─────────────────────────────────────────────────── */
+const form           = document.querySelector("#search-form");
+const input          = document.querySelector("#search-input");
+const stationList    = document.querySelector("#station-list");
+const statusLine     = document.querySelector("#status-line");
+const nowPlaying     = document.querySelector("#now-playing");
+const audio          = document.querySelector("#audio-player");
+const playButton     = document.querySelector("#play-button");
 const previousButton = document.querySelector("#previous-button");
-const nextButton = document.querySelector("#next-button");
-const volumeSlider = document.querySelector("#volume-slider");
-const volumeValue = document.querySelector("#volume-value");
-const radiosMenuLink = document.querySelector('a[href="#radios"]');
+const nextButton     = document.querySelector("#next-button");
+const volumeSlider   = document.querySelector("#volume-slider");
+const volumeValue    = document.querySelector("#volume-value");
+const loadMoreBtn    = document.querySelector("#load-more-button");
+const loadMoreWrap   = document.querySelector("#load-more-wrapper");
 
 audio.volume = Number(volumeSlider.value) / 100;
 
-function setStatus(message) {
+/* ── Helpers ────────────────────────────────────────────────────────── */
+function setStatus(message, type = "") {
   statusLine.textContent = message;
+  statusLine.className = "status-line" + (type ? ` is-${type}` : "");
 }
 
 function stationLabel(station) {
@@ -40,29 +54,49 @@ function streamUrl(station) {
   return station.url_resolved || station.url;
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&",  "&amp;")
+    .replaceAll("<",  "&lt;")
+    .replaceAll(">",  "&gt;")
+    .replaceAll('"',  "&quot;")
+    .replaceAll("'",  "&#039;");
+}
+
 function normalizeStations(stations) {
   const seen = new Set();
-
   return stations
-    .filter((station) => station.name && streamUrl(station))
-    .filter((station) => {
-      const key = `${station.name}-${streamUrl(station)}`.toLowerCase();
+    .filter((s) => s.name && streamUrl(s))
+    .filter((s) => {
+      const key = `${s.name}-${streamUrl(s)}`.toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
 }
 
-async function fetchStations(term = "") {
-  setStatus("Buscando radios brasileiras...");
+/* ── Skeleton Loading ───────────────────────────────────────────────── */
+function renderSkeletons(count = 10) {
   stationList.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    const div = document.createElement("div");
+    div.className = "skeleton-card";
+    stationList.appendChild(div);
+  }
+}
+
+/* ── Fetch ──────────────────────────────────────────────────────────── */
+async function fetchStations(term = "") {
+  setStatus("Buscando rádios brasileiras…");
+  renderSkeletons();
+  loadMoreWrap.hidden = true;
 
   const baseParams = {
     countrycode: "BR",
-    hidebroken: "true",
-    order: "clickcount",
-    reverse: "true",
-    limit: "24",
+    hidebroken:  "true",
+    order:       "clickcount",
+    reverse:     "true",
+    limit:       "24",
   };
 
   const trimmedTerm = term.trim();
@@ -77,105 +111,160 @@ async function fetchStations(term = "") {
       const batches = await Promise.all(
         searches.map(async (search) => {
           const params = new URLSearchParams({ ...baseParams, ...search });
-          const response = await fetch(`${API_BASES[index]}?${params.toString()}`);
-          if (!response.ok) throw new Error("Resposta invalida da API");
+          const response = await fetch(`${API_BASES[index]}?${params.toString()}`, {
+            headers: FETCH_HEADERS,
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
           return response.json();
         })
       );
 
-      state.apiIndex = index;
+      state.apiIndex    = index;
       state.allStations = normalizeStations(batches.flat());
-      state.stations = state.allStations.slice(0, state.displayCount);
       state.activeIndex = -1;
-      renderStations();
 
-      if (state.stations.length) {
-        setStatus(`${state.stations.length} radios encontradas`);
+      renderStations();
+      updateLoadMoreVisibility();
+
+      if (state.allStations.length) {
+        setStatus(`${state.allStations.length} rádios encontradas`);
       } else {
-        setStatus("Nenhuma radio encontrada para essa busca");
+        setStatus("Nenhuma rádio encontrada para essa busca");
       }
       return;
+
     } catch (error) {
+      console.error(`[FFM] API ${API_BASES[index]} falhou (tentativa ${attempt + 1}):`, error);
       if (attempt === API_BASES.length - 1) {
-        setStatus("Nao foi possivel conectar ao Radio Browser agora");
+        stationList.innerHTML = "";
+        setStatus("Não foi possível conectar ao Radio Browser. Verifique sua conexão.", "error");
       }
     }
   }
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function loadMoreStations() {
-  const newCount = state.displayCount + 10;
-  state.stations = state.allStations.slice(0, newCount);
-  state.displayCount = newCount;
-  renderStations();
-  setStatus(`${state.stations.length} radios carregadas`);
-}
-
+/* ── Render ─────────────────────────────────────────────────────────── */
 function renderStations() {
   stationList.innerHTML = "";
 
-  state.stations.forEach((station, index) => {
+  const toDisplay = [];
+  state.favorites.forEach(fav => {
+    toDisplay.push({ ...fav, isFavorite: true });
+  });
+
+  let consumed = 0;
+  for (const station of state.allStations) {
+    if (toDisplay.length >= Math.max(state.displayCount, state.favorites.length)) {
+      break;
+    }
+    consumed++;
+    if (!toDisplay.find(s => s.stationuuid === station.stationuuid)) {
+      toDisplay.push({ ...station, isFavorite: false });
+    }
+  }
+
+  state.hasMoreStations = consumed < state.allStations.length;
+  state.displayStations = toDisplay;
+
+  state.displayStations.forEach((station, index) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "station-card";
     button.dataset.index = index;
-    const tags = station.tags ? station.tags.split(",").slice(0, 2).join(", ") : "";
+    
+    if (station.stationuuid === state.activeStationUuid) {
+      state.activeIndex = index;
+      button.classList.add("is-active");
+    }
+
+    const tags     = station.tags ? station.tags.split(",").slice(0, 2).join(", ") : "";
     const location = station.state || station.country || "Brasil";
-    const genre = tags || station.language || "Radio online";
+    const genre    = tags || station.language || "Rádio online";
+
+    // Favicon: use the API favicon if available, otherwise a musical note emoji
+    const faviconHTML = station.favicon
+      ? `<img class="station-favicon" src="${escapeHtml(station.favicon)}" alt="" loading="lazy"
+             onerror="this.replaceWith(makeFaviconPlaceholder())">`
+      : `<span class="station-favicon-placeholder" aria-hidden="true">🎵</span>`;
+
+    const heartIcon = station.isFavorite ? "♥" : "♡";
+
     button.innerHTML = `
+      <div class="favorite-btn ${station.isFavorite ? 'is-favorite' : ''}" aria-label="Favoritar rádio">
+        ${heartIcon}
+      </div>
+      ${faviconHTML}
       <span class="station-name">${escapeHtml(station.name)}</span>
       <span class="station-meta">${escapeHtml(location)}</span>
       <span class="station-meta">${escapeHtml(genre)}</span>
     `;
     button.addEventListener("click", () => selectStation(index));
+    
+    const favBtn = button.querySelector(".favorite-btn");
+    favBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleFavorite(station);
+    });
+
     stationList.appendChild(button);
   });
 }
 
-function updateMediaSession(station) {
-  if ('mediaSession' in navigator && station) {
-    const tags = station.tags ? station.tags.split(",").slice(0, 2).join(", ") : "";
-    const genre = tags || station.language || "Rádio Online";
-    const location = station.state || station.country || "Brasil";
-
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: station.name,
-      artist: `${location} • ${genre}`,
-      artwork: [
-        { src: station.favicon || 'https://ffm.lucc4w.space/logo.png', sizes: '512x512', type: 'image/png' }
-      ]
-    });
-
-    // Sincroniza os botões do player do Android com o seu site
-    navigator.mediaSession.setActionHandler('play', playCurrent);
-    navigator.mediaSession.setActionHandler('pause', pauseCurrent);
-    navigator.mediaSession.setActionHandler('previoustrack', () => moveStation(-1));
-    navigator.mediaSession.setActionHandler('nexttrack', () => moveStation(1));
+function toggleFavorite(station) {
+  const index = state.favorites.findIndex(s => s.stationuuid === station.stationuuid);
+  if (index > -1) {
+    state.favorites.splice(index, 1);
+  } else {
+    if (state.favorites.length >= 5) {
+      setStatus("Você já fixou 5 rádios favoritas.", "error");
+      return;
+    }
+    const favObj = { ...station };
+    delete favObj.isFavorite;
+    state.favorites.push(favObj);
   }
+  localStorage.setItem("ffm_favorites", JSON.stringify(state.favorites));
+  renderStations();
 }
 
+// Helper used by onerror in img tags
+function makeFaviconPlaceholder() {
+  const span = document.createElement("span");
+  span.className = "station-favicon-placeholder";
+  span.setAttribute("aria-hidden", "true");
+  span.textContent = "🎵";
+  return span;
+}
+window.makeFaviconPlaceholder = makeFaviconPlaceholder;
+
+function updateLoadMoreVisibility() {
+  loadMoreWrap.hidden = !state.hasMoreStations;
+}
+
+/* ── Load More ──────────────────────────────────────────────────────── */
+function loadMoreStations() {
+  const newCount   = state.displayCount + 10;
+  state.displayCount = newCount;
+  renderStations();
+  updateLoadMoreVisibility();
+  setStatus(`Mostrando ${state.displayStations.length} rádios`);
+}
+
+/* ── Playback ───────────────────────────────────────────────────────── */
 async function selectStation(index) {
-  const station = state.stations[index];
+  const station = state.displayStations[index];
   if (!station) return;
 
-  state.activeIndex = index;
-  audio.src = streamUrl(station);
-  nowPlaying.textContent = stationLabel(station);
+  state.activeIndex       = index;
+  state.activeStationUuid = station.stationuuid;
+  audio.src               = streamUrl(station);
+  nowPlaying.textContent  = stationLabel(station);
   setActiveCard();
   await playCurrent();
 }
 
 async function playCurrent() {
-  if (!audio.src && state.stations[0]) {
+  if (!audio.src && state.displayStations[0]) {
     await selectStation(0);
     return;
   }
@@ -184,16 +273,14 @@ async function playCurrent() {
     await audio.play();
     state.isPlaying = true;
     playButton.classList.remove("is-paused");
-    setStatus("Tocando ao vivo");
-
-    // LINHA ADICIONADA: Atualiza os dados na notificação do Android
-    updateMediaSession(state.stations[state.activeIndex]);
-    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
-
+    setStatus("Tocando ao vivo", "live");
+    updateMediaSession(state.displayStations[state.activeIndex]);
+    if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
   } catch (error) {
+    console.error("[FFM] Erro ao tentar reproduzir:", error);
     state.isPlaying = false;
     playButton.classList.add("is-paused");
-    setStatus("A radio bloqueou autoplay. Clique em tocar para tentar novamente.");
+    setStatus("A rádio bloqueou autoplay. Clique em tocar para tentar novamente.", "error");
   }
 }
 
@@ -202,8 +289,7 @@ function pauseCurrent() {
   state.isPlaying = false;
   playButton.classList.add("is-paused");
   setStatus("Pausado");
-
-  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "paused";
+  if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
 }
 
 function setActiveCard() {
@@ -213,17 +299,64 @@ function setActiveCard() {
 }
 
 function moveStation(direction) {
-  if (!state.stations.length) return;
+  if (!state.displayStations.length) return;
   const nextIndex =
     state.activeIndex < 0
       ? 0
-      : (state.activeIndex + direction + state.stations.length) % state.stations.length;
+      : (state.activeIndex + direction + state.displayStations.length) % state.displayStations.length;
   selectStation(nextIndex);
 }
 
+/* ── Media Session ──────────────────────────────────────────────────── */
+function updateMediaSession(station) {
+  if (!("mediaSession" in navigator) || !station) return;
+  const tags     = station.tags ? station.tags.split(",").slice(0, 2).join(", ") : "";
+  const genre    = tags || station.language || "Rádio Online";
+  const location = station.state || station.country || "Brasil";
+
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title:   station.name,
+    artist:  `${location} • ${genre}`,
+    artwork: [
+      { src: station.favicon || "https://ffm.lucc4w.space/logo.png", sizes: "512x512", type: "image/png" },
+    ],
+  });
+
+  navigator.mediaSession.setActionHandler("play", playCurrent);
+  navigator.mediaSession.setActionHandler("pause", pauseCurrent);
+  navigator.mediaSession.setActionHandler("previoustrack", () => moveStation(-1));
+  navigator.mediaSession.setActionHandler("nexttrack", () => moveStation(1));
+}
+
+/* ── Nav Active (IntersectionObserver) ──────────────────────────────── */
+const navLinks = {
+  inicio: document.querySelector("#nav-inicio"),
+  radios: document.querySelector("#nav-radios"),
+  sobre:  document.querySelector("#nav-sobre"),
+};
+
+const sections = ["inicio", "radios", "sobre"].map((id) => document.getElementById(id));
+
+const sectionObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        Object.values(navLinks).forEach((a) => a && a.classList.remove("is-active"));
+        const link = navLinks[entry.target.id];
+        if (link) link.classList.add("is-active");
+      }
+    });
+  },
+  { threshold: 0.35 }
+);
+
+sections.forEach((s) => s && sectionObserver.observe(s));
+
+/* ── Events ─────────────────────────────────────────────────────────── */
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   pauseCurrent();
+  state.displayCount = 10;
   fetchStations(input.value);
 });
 
@@ -231,16 +364,14 @@ let searchTimeout;
 input.addEventListener("input", () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
+    state.displayCount = 10;
     fetchStations(input.value);
-  }, 300);
+  }, 350);
 });
 
 playButton.addEventListener("click", () => {
-  if (state.isPlaying) {
-    pauseCurrent();
-  } else {
-    playCurrent();
-  }
+  if (state.isPlaying) pauseCurrent();
+  else playCurrent();
 });
 
 previousButton.addEventListener("click", () => moveStation(-1));
@@ -249,39 +380,36 @@ nextButton.addEventListener("click", () => moveStation(1));
 volumeSlider.addEventListener("input", () => {
   const volume = Number(volumeSlider.value);
   audio.volume = volume / 100;
-  audio.muted = volume === 0;
+  audio.muted  = volume === 0;
   volumeValue.textContent = `${volume}%`;
 });
 
-radiosMenuLink.addEventListener("click", (event) => {
-  event.preventDefault();
-  if (state.stations.length > 0) {
-    loadMoreStations();
-  }
-  document.querySelector("#radios").scrollIntoView({ behavior: "smooth" });
-});
+loadMoreBtn.addEventListener("click", loadMoreStations);
 
 audio.addEventListener("error", () => {
   state.isPlaying = false;
   playButton.classList.add("is-paused");
-  setStatus("Esta transmissao falhou. Tente outra radio da lista.");
+  setStatus("Esta transmissão falhou. Tente outra rádio da lista.", "error");
 });
 
 audio.addEventListener("playing", () => {
   state.isPlaying = true;
   playButton.classList.remove("is-paused");
+  setStatus("Tocando ao vivo", "live");
 });
 
-fetchStations();
-
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
+/* ── Smooth anchor links (single handler) ───────────────────────────── */
+document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+  anchor.addEventListener("click", (e) => {
     e.preventDefault();
-
-    const target = document.querySelector(this.getAttribute('href'));
+    const targetId = anchor.getAttribute("href");
+    const target = document.querySelector(targetId);
     if (target) {
-      target.scrollIntoView({ behavior: 'smooth' });
-      window.history.pushState(null, null, window.location.origin + window.location.pathname);
+      target.scrollIntoView({ behavior: "smooth" });
+      history.pushState(null, "", window.location.pathname);
     }
   });
 });
+
+/* ── Init ───────────────────────────────────────────────────────────── */
+fetchStations();
