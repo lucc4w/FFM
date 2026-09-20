@@ -18,6 +18,15 @@
   <!-- Google Fonts: Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
+  <!-- PWA & Mobile Web App -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1800a9" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="FFM Rádios" />
+  <link rel="apple-touch-icon" href="logo.png" />
+
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -27,6 +36,7 @@
       <a href="#inicio" id="nav-inicio">Início</a>
       <a href="#radios" id="nav-radios">Rádios</a>
       <a href="#sobre" id="nav-sobre">Sobre</a>
+      <button type="button" class="nav-install-link" id="nav-install" style="display: none;">Instalar App</button>
     </nav>
   </header>
 
@@ -49,6 +59,19 @@
       <p class="now-playing" id="now-playing">Escolha sua estação preferida.</p>
 
       <div class="player-shell">
+        <div class="player-now-playing" id="player-now-playing" aria-live="polite" title="Clique para ver na lista">
+          <span class="player-live-badge">
+            <span class="live-dot" aria-hidden="true"></span>
+            <span class="live-status-text" id="live-status-text">AO VIVO</span>
+          </span>
+          <span class="player-equalizer" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+          <span class="player-station-title" id="player-station-title"></span>
+        </div>
+
         <button class="skip-button" id="previous-button" type="button" aria-label="Rádio anterior">
           <span class="previous-icon"></span>
         </button>
@@ -60,10 +83,10 @@
         </button>
 
         <div class="volume-control">
-          <button class="volume-button" type="button" aria-label="Controle de volume">
+          <button class="volume-button" type="button" aria-label="Controle de volume" aria-haspopup="true" aria-expanded="false">
             <span class="volume-icon" aria-hidden="true"></span>
           </button>
-          <div class="volume-panel">
+          <div class="volume-panel" role="region" aria-label="Ajuste de volume">
             <label for="volume-slider">Volume</label>
             <input id="volume-slider" type="range" min="0" max="100" value="40" />
             <span class="volume-value" id="volume-value">40%</span>
@@ -90,8 +113,83 @@
         Feito por <strong>@lucc4w</strong> &copy; 2026. Dados via
         <a href="https://www.radio-browser.info" target="_blank" rel="noopener noreferrer">Radio Browser</a>.
       </p>
+      <div class="install-action-wrapper" id="install-action-wrapper" style="display: none; margin-top: 1.5rem;">
+        <button type="button" class="btn-install-app" id="btn-open-install">
+          📲 Adicionar à Tela Inicial
+        </button>
+      </div>
     </section>
   </main>
+
+  <!-- Modal / Pop-up de Instalação PWA (Mobile) -->
+  <div class="pwa-install-overlay" id="pwa-install-overlay" role="dialog" aria-modal="true" aria-labelledby="pwa-install-title" hidden>
+    <div class="pwa-install-sheet" id="pwa-install-sheet">
+      <div class="pwa-sheet-handle" aria-hidden="true"></div>
+      <button class="pwa-close-btn" id="pwa-close-btn" type="button" aria-label="Fechar pop-up">&times;</button>
+      
+      <div class="pwa-header">
+        <img src="logo.png" alt="FFM Rádios" class="pwa-app-icon" />
+        <div class="pwa-app-info">
+          <div class="pwa-title-row">
+            <h3 id="pwa-install-title">FFM Rádios</h3>
+            <span class="pwa-badge">APP</span>
+          </div>
+          <p class="pwa-app-desc">Rádios do Brasil ao vivo no celular</p>
+        </div>
+      </div>
+
+      <div class="pwa-body">
+        <p class="pwa-message">
+          Adicione o <strong>FFM</strong> à tela inicial do seu celular para ouvir como um aplicativo: acesso em 1 toque e tela cheia sem barras do navegador!
+        </p>
+
+        <ul class="pwa-benefits">
+          <li>
+            <span class="benefit-icon" aria-hidden="true">⚡</span>
+            <span>Acesso rápido direto pelo ícone na tela inicial</span>
+          </li>
+          <li>
+            <span class="benefit-icon" aria-hidden="true">📱</span>
+            <span>Interface de app dedicada, sem barras de navegação</span>
+          </li>
+          <li>
+            <span class="benefit-icon" aria-hidden="true">🎵</span>
+            <span>Áudio ao vivo em segundo plano mesmo com a tela bloqueada</span>
+          </li>
+        </ul>
+
+        <!-- Instruções passo a passo para iOS Safari -->
+        <div class="pwa-ios-instructions" id="pwa-ios-instructions" hidden>
+          <div class="pwa-ios-guide-box">
+            <p class="pwa-ios-hint"><strong>Como adicionar no iPhone / iPad:</strong></p>
+            <div class="pwa-ios-steps">
+              <div class="pwa-ios-step">
+                <span class="step-num">1</span>
+                <span>Toque no botão <strong>Compartilhar</strong> (<svg class="ios-share-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>) na barra inferior do Safari</span>
+              </div>
+              <div class="pwa-ios-step">
+                <span class="step-num">2</span>
+                <span>Role a lista e toque em <strong>"Adicionar à Tela de Início"</strong> (<svg class="ios-add-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>)</span>
+              </div>
+              <div class="pwa-ios-step">
+                <span class="step-num">3</span>
+                <span>Toque em <strong>"Adicionar"</strong> no canto superior direito</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pwa-actions">
+        <button class="pwa-install-btn" id="pwa-install-btn" type="button">
+          Adicionar à Tela Inicial
+        </button>
+        <button class="pwa-dismiss-btn" id="pwa-dismiss-btn" type="button">
+          Agora não
+        </button>
+      </div>
+    </div>
+  </div>
 
   <audio id="audio-player" crossorigin="anonymous"></audio>
   <script src="script.js"></script>

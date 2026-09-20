@@ -1,0 +1,26 @@
+{
+  "name": "FFM — Rádios do Brasil",
+  "short_name": "FFM Rádios",
+  "description": "Player de rádios online do Brasil. Ouça suas estações favoritas ao vivo no seu celular.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#12007f",
+  "theme_color": "#1800a9",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -258,6 +258,158 @@ input[type="range"] {
   box-shadow: var(--shadow-lg);
 }
 
+/* ─── Now Playing (Floating Above Player) ─────────────────────────── */
+.player-now-playing {
+  position: absolute;
+  bottom: calc(100% + 0.65rem);
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: min(calc(100vw - 2rem), 32rem);
+  padding: 0.38rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: rgba(10, 0, 90, 0.88);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: var(--shadow-md);
+  color: var(--white);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 16;
+  animation: now-playing-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: border-color var(--transition), transform var(--transition);
+}
+
+.player-now-playing.is-visible {
+  display: flex;
+}
+
+.player-now-playing:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+@keyframes now-playing-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.player-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  background: rgba(95, 255, 176, 0.12);
+  border: 1px solid rgba(95, 255, 176, 0.3);
+  border-radius: var(--radius-pill);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #5fffb0;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.live-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #5fffb0;
+  box-shadow: 0 0 6px #5fffb0;
+  flex-shrink: 0;
+  transition: background var(--transition), box-shadow var(--transition);
+}
+
+.player-now-playing.is-playing .live-dot {
+  animation: dot-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.65;
+  }
+}
+
+.player-now-playing:not(.is-playing) .player-live-badge {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--soft);
+}
+
+.player-now-playing:not(.is-playing) .live-dot {
+  background: var(--muted);
+  box-shadow: none;
+  animation: none;
+}
+
+/* Mini Equalizer */
+.player-equalizer {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 0.8rem;
+  flex-shrink: 0;
+}
+
+.player-equalizer span {
+  width: 2.5px;
+  height: 30%;
+  background: #5fffb0;
+  border-radius: 1px;
+  transition: height 180ms ease, background 180ms ease;
+}
+
+.player-now-playing.is-playing .player-equalizer span:nth-child(1) {
+  animation: eq-bar 0.75s ease-in-out infinite alternate;
+}
+
+.player-now-playing.is-playing .player-equalizer span:nth-child(2) {
+  animation: eq-bar 1.05s ease-in-out infinite alternate 0.25s;
+}
+
+.player-now-playing.is-playing .player-equalizer span:nth-child(3) {
+  animation: eq-bar 0.85s ease-in-out infinite alternate 0.5s;
+}
+
+@keyframes eq-bar {
+  0%   { height: 25%; }
+  100% { height: 100%; }
+}
+
+.player-now-playing:not(.is-playing) .player-equalizer span {
+  height: 25%;
+  background: var(--muted);
+  animation: none;
+}
+
+.player-station-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 22rem;
+}
+
 /* ─── Player Buttons ─────────────────────────────────────────────── */
 .skip-button,
 .play-button,
@@ -385,7 +537,8 @@ input[type="range"] {
 }
 
 .volume-control:hover,
-.volume-control:focus-within {
+.volume-control:focus-within,
+.volume-control.is-open {
   width: 13.5rem;
   background: rgba(189, 0, 69, 0.45);
 }
@@ -441,7 +594,8 @@ input[type="range"] {
 }
 
 .volume-control:hover .volume-panel,
-.volume-control:focus-within .volume-panel {
+.volume-control:focus-within .volume-panel,
+.volume-control.is-open .volume-panel {
   opacity: 1;
   transform: translateX(0);
 }
@@ -742,7 +896,7 @@ input[type="range"] {
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────── */
-@media (max-width: 720px) {
+@media (max-width: 720px), (orientation: portrait) {
   .site-header {
     min-height: 4.75rem;
     padding: 0.9rem 0.75rem;
@@ -774,34 +928,422 @@ input[type="range"] {
     min-height: 5rem;
     padding: 0.6rem 0.8rem 0.6rem 1.2rem;
     border-radius: 1.6rem;
+    width: min(calc(100% - 1.5rem), 39rem);
+  }
+
+  .player-now-playing {
+    bottom: calc(100% + 0.55rem);
+    max-width: min(calc(100vw - 2rem), 22rem);
+    padding: 0.32rem 0.75rem;
+    gap: 0.45rem;
+  }
+
+  .player-station-title {
+    font-size: 0.78rem;
+    max-width: 12rem;
+  }
+
+  .player-live-badge {
+    font-size: 0.62rem;
+    padding: 0.12rem 0.38rem;
   }
 
   .volume-control {
+    position: relative;
     width: 2.75rem;
+    height: 2.75rem;
+    overflow: visible;
+    border-radius: var(--radius-pill);
+    transition: background var(--transition);
   }
 
+  /* Não expande horizontalmente na barra para não sobrepor o botão de próxima rádio */
   .volume-control:hover,
-  .volume-control:focus-within {
-    width: 11.5rem;
+  .volume-control:focus-within,
+  .volume-control.is-open {
+    width: 2.75rem;
+    background: transparent;
   }
 
   .volume-button {
-    flex-basis: 2.75rem;
+    flex: 0 0 2.75rem;
     width: 2.75rem;
+    height: 2.75rem;
   }
 
+  .volume-control.is-open .volume-button,
+  .volume-control:focus-within .volume-button {
+    background: var(--red);
+    transform: scale(1.08);
+  }
+
+  /* Painel flutuante acima do botão de volume */
   .volume-panel {
-    width: 8.5rem;
-    padding-right: 0.65rem;
+    position: absolute;
+    bottom: calc(100% + 0.85rem);
+    right: 0;
+    width: 12.5rem;
+    padding: 0.7rem 0.95rem;
+    background: rgba(12, 0, 100, 0.95);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-lg);
+    display: grid;
+    grid-template-columns: 1fr 2.8rem;
+    align-items: center;
+    gap: 0.65rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(0.4rem);
+    transition: opacity 180ms ease, transform 180ms ease;
+    z-index: 30;
   }
 
-  .volume-control:hover .volume-panel,
+  /* Indicador visual em seta apontando para o botão de volume */
+  .volume-panel::after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    right: 0.9rem;
+    width: 10px;
+    height: 10px;
+    background: rgba(12, 0, 100, 0.95);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    transform: rotate(45deg);
+  }
+
+  .volume-panel input[type="range"] {
+    height: 1.5rem;
+    margin: 0;
+  }
+
+  .volume-control.is-open .volume-panel,
   .volume-control:focus-within .volume-panel {
-    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  @media (hover: hover) {
+    .volume-control:hover .volume-button {
+      background: var(--red);
+      transform: scale(1.08);
+    }
+
+    .volume-control:hover .volume-panel {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
   }
 
   .station-list {
     grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
     gap: 0.75rem;
   }
+}
+
+/* ─── PWA Install Banner & Modal ─────────────────────────────────── */
+.nav-install-link {
+  color: var(--white);
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--red);
+  border: 0;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.nav-install-link:hover,
+.nav-install-link:focus-visible {
+  background: var(--red-bright);
+  transform: scale(1.04);
+}
+
+.btn-install-app {
+  padding: 0.85rem 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--red);
+  color: var(--white);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: background var(--transition), transform var(--transition);
+}
+
+.btn-install-app:hover,
+.btn-install-app:focus-visible {
+  background: var(--red-bright);
+  transform: translateY(-2px);
+}
+
+/* PWA Overlay */
+.pwa-install-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(4, 0, 40, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+
+.pwa-install-overlay.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Sheet container */
+.pwa-install-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 32rem;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem 2.2rem;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(223, 12, 75, 0.22), transparent 70%),
+    linear-gradient(180deg, #16008b, #0c0054);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 0;
+  border-radius: 1.85rem 1.85rem 0 0;
+  box-shadow: 0 -1.5rem 4rem rgba(0, 0, 0, 0.55);
+  transform: translateY(100%);
+  transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pwa-install-overlay.is-active .pwa-install-sheet {
+  transform: translateY(0);
+}
+
+.pwa-sheet-handle {
+  width: 2.8rem;
+  height: 4px;
+  margin: 0 auto 1.1rem;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+.pwa-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1.15rem;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--white);
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.pwa-close-btn:hover,
+.pwa-close-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.08);
+}
+
+/* Header */
+.pwa-header {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin-bottom: 1.15rem;
+}
+
+.pwa-app-icon {
+  width: 4.25rem;
+  height: 4.25rem;
+  aspect-ratio: 1;
+  border-radius: 1.15rem;
+  object-fit: cover;
+  background: #12007f;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.4);
+}
+
+.pwa-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.pwa-title-row h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--white);
+}
+
+.pwa-badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.35rem;
+  background: var(--red);
+  color: var(--white);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.pwa-app-desc {
+  margin: 0.25rem 0 0;
+  color: var(--soft);
+  font-size: 0.88rem;
+}
+
+/* Body */
+.pwa-message {
+  margin: 0 0 1rem;
+  color: var(--white);
+  font-size: 0.93rem;
+  line-height: 1.55;
+}
+
+.pwa-message strong {
+  color: #ff9fb4;
+}
+
+.pwa-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.pwa-benefits li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.86rem;
+  color: var(--white);
+}
+
+.benefit-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+/* iOS Guide */
+.pwa-ios-instructions {
+  margin: 0.8rem 0 1.25rem;
+}
+
+.pwa-ios-guide-box {
+  padding: 0.95rem 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1rem;
+}
+
+.pwa-ios-hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.86rem;
+  color: #5fffb0;
+}
+
+.pwa-ios-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.pwa-ios-step {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.84rem;
+  color: var(--white);
+  line-height: 1.4;
+}
+
+.pwa-ios-step .step-num {
+  display: grid;
+  place-items: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 50%;
+  background: var(--red);
+  color: var(--white);
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ios-share-icon,
+.ios-add-icon {
+  display: inline-block;
+  vertical-align: -2px;
+  color: #70d7ff;
+}
+
+/* Actions */
+.pwa-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+}
+
+.pwa-install-btn {
+  width: 100%;
+  min-height: 3.25rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--red), var(--red-bright));
+  color: var(--white);
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  box-shadow: 0 0.5rem 1.5rem rgba(223, 12, 75, 0.45);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.pwa-install-btn:hover,
+.pwa-install-btn:focus-visible {
+  transform: scale(1.02);
+  box-shadow: 0 0.75rem 2rem rgba(223, 12, 75, 0.6);
+}
+
+.pwa-dismiss-btn {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 0;
+  background: transparent;
+  color: var(--soft);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.pwa-dismiss-btn:hover,
+.pwa-dismiss-btn:focus-visible {
+  color: var(--white);
 }

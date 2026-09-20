@@ -33,10 +33,15 @@ const audio          = document.querySelector("#audio-player");
 const playButton     = document.querySelector("#play-button");
 const previousButton = document.querySelector("#previous-button");
 const nextButton     = document.querySelector("#next-button");
+const volumeControl  = document.querySelector(".volume-control");
+const volumeButton   = document.querySelector(".volume-button");
 const volumeSlider   = document.querySelector("#volume-slider");
 const volumeValue    = document.querySelector("#volume-value");
 const loadMoreBtn    = document.querySelector("#load-more-button");
 const loadMoreWrap   = document.querySelector("#load-more-wrapper");
+const playerNowPlaying   = document.querySelector("#player-now-playing");
+const playerStationTitle = document.querySelector("#player-station-title");
+const liveStatusText     = document.querySelector("#live-status-text");
 
 audio.volume = Number(volumeSlider.value) / 100;
 
@@ -259,6 +264,14 @@ async function selectStation(index) {
   state.activeStationUuid = station.stationuuid;
   audio.src               = streamUrl(station);
   nowPlaying.textContent  = stationLabel(station);
+
+  if (playerNowPlaying && playerStationTitle) {
+    playerStationTitle.textContent = stationLabel(station);
+    playerNowPlaying.classList.add("is-visible");
+    playerNowPlaying.classList.remove("is-playing");
+    if (liveStatusText) liveStatusText.textContent = "CONECTANDO...";
+  }
+
   setActiveCard();
   await playCurrent();
 }
@@ -274,12 +287,20 @@ async function playCurrent() {
     state.isPlaying = true;
     playButton.classList.remove("is-paused");
     setStatus("Tocando ao vivo", "live");
+    if (playerNowPlaying) {
+      playerNowPlaying.classList.add("is-playing");
+      if (liveStatusText) liveStatusText.textContent = "AO VIVO";
+    }
     updateMediaSession(state.displayStations[state.activeIndex]);
     if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
   } catch (error) {
     console.error("[FFM] Erro ao tentar reproduzir:", error);
     state.isPlaying = false;
     playButton.classList.add("is-paused");
+    if (playerNowPlaying) {
+      playerNowPlaying.classList.remove("is-playing");
+      if (liveStatusText) liveStatusText.textContent = "PAUSADO";
+    }
     setStatus("A rádio bloqueou autoplay. Clique em tocar para tentar novamente.", "error");
   }
 }
@@ -290,6 +311,10 @@ function pauseCurrent() {
   playButton.classList.add("is-paused");
   setStatus("Pausado");
   if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
+  if (playerNowPlaying) {
+    playerNowPlaying.classList.remove("is-playing");
+    if (liveStatusText) liveStatusText.textContent = "PAUSADO";
+  }
 }
 
 function setActiveCard() {
@@ -377,6 +402,36 @@ playButton.addEventListener("click", () => {
 previousButton.addEventListener("click", () => moveStation(-1));
 nextButton.addEventListener("click", () => moveStation(1));
 
+if (volumeButton && volumeControl) {
+  volumeButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willOpen = !volumeControl.classList.contains("is-open");
+    if (willOpen) {
+      volumeControl.classList.add("is-open");
+      volumeButton.setAttribute("aria-expanded", "true");
+    } else {
+      volumeControl.classList.remove("is-open");
+      volumeButton.setAttribute("aria-expanded", "false");
+      volumeButton.blur();
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!volumeControl.contains(e.target)) {
+      volumeControl.classList.remove("is-open");
+      volumeButton.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && volumeControl.classList.contains("is-open")) {
+      volumeControl.classList.remove("is-open");
+      volumeButton.setAttribute("aria-expanded", "false");
+      volumeButton.focus();
+    }
+  });
+}
+
 volumeSlider.addEventListener("input", () => {
   const volume = Number(volumeSlider.value);
   audio.volume = volume / 100;
@@ -390,13 +445,30 @@ audio.addEventListener("error", () => {
   state.isPlaying = false;
   playButton.classList.add("is-paused");
   setStatus("Esta transmissão falhou. Tente outra rádio da lista.", "error");
+  if (playerNowPlaying) {
+    playerNowPlaying.classList.remove("is-playing");
+    if (liveStatusText) liveStatusText.textContent = "OFFLINE";
+  }
 });
 
 audio.addEventListener("playing", () => {
   state.isPlaying = true;
   playButton.classList.remove("is-paused");
   setStatus("Tocando ao vivo", "live");
+  if (playerNowPlaying) {
+    playerNowPlaying.classList.add("is-playing");
+    if (liveStatusText) liveStatusText.textContent = "AO VIVO";
+  }
 });
+
+if (playerNowPlaying) {
+  playerNowPlaying.addEventListener("click", () => {
+    const activeCard = document.querySelector(".station-card.is-active");
+    if (activeCard) {
+      activeCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
+}
 
 /* ── Smooth anchor links (single handler) ───────────────────────────── */
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
@@ -410,6 +482,141 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
     }
   });
 });
+
+/* ── PWA Mobile Install Popup ───────────────────────────────────────── */
+const pwaOverlay           = document.querySelector("#pwa-install-overlay");
+const pwaCloseBtn          = document.querySelector("#pwa-close-btn");
+const pwaInstallBtn        = document.querySelector("#pwa-install-btn");
+const pwaDismissBtn        = document.querySelector("#pwa-dismiss-btn");
+const pwaIosInstructions   = document.querySelector("#pwa-ios-instructions");
+const navInstallBtn        = document.querySelector("#nav-install");
+const btnOpenInstall       = document.querySelector("#btn-open-install");
+const installActionWrapper = document.querySelector("#install-action-wrapper");
+
+const isStandalone =
+  window.matchMedia("(display-mode: standalone)").matches ||
+  window.navigator.standalone === true;
+
+const isMobile =
+  /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent) ||
+  (window.innerWidth <= 768 && ("ontouchstart" in window || navigator.maxTouchPoints > 0));
+
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+let deferredPrompt = null;
+
+function openPwaPopup() {
+  if (!pwaOverlay) return;
+
+  if (isIOS && pwaIosInstructions) {
+    pwaIosInstructions.hidden = false;
+    if (pwaInstallBtn) {
+      pwaInstallBtn.textContent = "Entendi, vou adicionar";
+    }
+  } else if (pwaIosInstructions) {
+    pwaIosInstructions.hidden = true;
+    if (pwaInstallBtn) {
+      pwaInstallBtn.textContent = "Adicionar à Tela Inicial";
+    }
+  }
+
+  pwaOverlay.hidden = false;
+  requestAnimationFrame(() => {
+    pwaOverlay.classList.add("is-active");
+  });
+}
+
+function closePwaPopup() {
+  if (!pwaOverlay) return;
+  pwaOverlay.classList.remove("is-active");
+  setTimeout(() => {
+    pwaOverlay.hidden = true;
+  }, 320);
+  localStorage.setItem("ffm_pwa_dismissed_time", Date.now().toString());
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!isStandalone) {
+    if (navInstallBtn) navInstallBtn.style.display = "inline-block";
+    if (installActionWrapper) installActionWrapper.style.display = "block";
+  }
+});
+
+if (pwaInstallBtn) {
+  pwaInstallBtn.addEventListener("click", async () => {
+    if (isIOS) {
+      closePwaPopup();
+      return;
+    }
+
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        localStorage.setItem("ffm_pwa_installed", "true");
+        if (navInstallBtn) navInstallBtn.style.display = "none";
+        if (installActionWrapper) installActionWrapper.style.display = "none";
+      }
+      deferredPrompt = null;
+      closePwaPopup();
+    } else {
+      alert("Para adicionar: abra o menu do navegador (três pontinhos ⋮) e escolha 'Instalar aplicativo' ou 'Adicionar à tela inicial'.");
+      closePwaPopup();
+    }
+  });
+}
+
+if (pwaCloseBtn) pwaCloseBtn.addEventListener("click", closePwaPopup);
+if (pwaDismissBtn) pwaDismissBtn.addEventListener("click", closePwaPopup);
+
+if (pwaOverlay) {
+  pwaOverlay.addEventListener("click", (e) => {
+    if (e.target === pwaOverlay) closePwaPopup();
+  });
+}
+
+if (navInstallBtn) {
+  navInstallBtn.addEventListener("click", openPwaPopup);
+}
+
+if (btnOpenInstall) {
+  btnOpenInstall.addEventListener("click", openPwaPopup);
+}
+
+window.addEventListener("appinstalled", () => {
+  localStorage.setItem("ffm_pwa_installed", "true");
+  if (navInstallBtn) navInstallBtn.style.display = "none";
+  if (installActionWrapper) installActionWrapper.style.display = "none";
+  closePwaPopup();
+});
+
+// Auto-abrir pop up quando for acessado no celular
+if (isMobile && !isStandalone) {
+  if (navInstallBtn) navInstallBtn.style.display = "inline-block";
+  if (installActionWrapper) installActionWrapper.style.display = "block";
+
+  const dismissedTime = localStorage.getItem("ffm_pwa_dismissed_time");
+  const alreadyInstalled = localStorage.getItem("ffm_pwa_installed") === "true";
+  const hasDismissedRecently =
+    dismissedTime && Date.now() - Number(dismissedTime) < 24 * 60 * 60 * 1000;
+
+  if (!alreadyInstalled && !hasDismissedRecently) {
+    setTimeout(() => {
+      openPwaPopup();
+    }, 1200);
+  }
+}
+
+// Registrar Service Worker
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch((err) => {
+      console.warn("[FFM PWA] Service worker:", err);
+    });
+  });
+}
 
 /* ── Init ───────────────────────────────────────────────────────────── */
 fetchStations();
