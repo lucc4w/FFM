@@ -1,7 +1,7 @@
 {
-  "name": "FFM — Rádios do Brasil",
-  "short_name": "FFM Rádios",
-  "description": "Player de rádios online do Brasil. Ouça suas estações favoritas ao vivo no seu celular.",
+  "name": "FFM Station — Rádios do Brasil",
+  "short_name": "FFM Station",
+  "description": "FFM Station: player de rádios online do Brasil. Ouça suas estações favoritas ao vivo no seu celular.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -11,14 +11,14 @@
   "lang": "pt-BR",
   "icons": [
     {
-      "src": "logo.png",
-      "sizes": "192x192",
+      "src": "logo_FFMSTATION.png",
+      "sizes": "1536x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "logo.png",
-      "sizes": "512x512",
+      "src": "logo_FFMSTATION.png",
+      "sizes": "1536x1024",
       "type": "image/png",
       "purpose": "any maskable"
     }

@@ -6,7 +6,7 @@ const API_BASES = [
 ];
 
 const FETCH_HEADERS = {
-  "User-Agent": "FFM/1.0 (https://ffm.lucc4w.space)",
+  "User-Agent": "FFM Station/1.0 (https://ffm.lucc4w.space)",
   "Accept": "application/json",
 };
 
@@ -343,7 +343,7 @@ function updateMediaSession(station) {
     title:   station.name,
     artist:  `${location} • ${genre}`,
     artwork: [
-      { src: station.favicon || "https://ffm.lucc4w.space/logo.png", sizes: "512x512", type: "image/png" },
+      { src: station.favicon || "https://ffm.lucc4w.space/FFM_Station.png", sizes: "512x512", type: "image/png" },
     ],
   });
 
@@ -475,6 +475,11 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", (e) => {
     e.preventDefault();
     const targetId = anchor.getAttribute("href");
+    if (targetId === "#inicio") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      history.pushState(null, "", window.location.pathname);
+      return;
+    }
     const target = document.querySelector(targetId);
     if (target) {
       target.scrollIntoView({ behavior: "smooth" });

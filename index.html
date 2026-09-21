@@ -4,9 +4,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FFM — Rádios do Brasil</title>
+  <title>FFM Station</title>
   <meta name="description"
-    content="FFM é um player de rádios online do Brasil. Busque e ouça suas estações favoritas diretamente no navegador, sem instalar nada." />
+    content="FFM Station é um player de rádios online do Brasil. Busque e ouça suas estações favoritas diretamente no navegador, sem instalar nada." />
 
   <!-- Preconnect para performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,33 +24,27 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="FFM Rádios" />
-  <link rel="apple-touch-icon" href="logo.png" />
+  <meta name="apple-mobile-web-app-title" content="FFM Station" />
+  <link rel="icon" type="image/png" href="logo_FFMSTATION.png" />
+  <link rel="apple-touch-icon" href="logo_FFMSTATION.png" />
 
   <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
   <header class="site-header">
-    <nav class="site-nav" aria-label="Menu principal">
-      <a href="#inicio" id="nav-inicio">Início</a>
-      <a href="#radios" id="nav-radios">Rádios</a>
-      <a href="#sobre" id="nav-sobre">Sobre</a>
-      <button type="button" class="nav-install-link" id="nav-install" style="display: none;">Instalar App</button>
-    </nav>
+    <a href="#inicio" class="header-logo-link" aria-label="FFM Station — Início">
+      <img src="logo_FFMSTATION.png" alt="FFM Station" class="brand-badge" />
+    </a>
   </header>
 
   <main class="stage">
-    <section id="inicio" class="hero" aria-labelledby="app-title">
-      <img src="logo.png" alt="FFM Logo" class="brand-badge" />
-      <h1 id="app-title" class="sr-only">FFM — Rádios do Brasil</h1>
-    </section>
 
     <section id="radios" class="radio-console" aria-label="Buscar e ouvir rádios">
       <form class="search-box" id="search-form">
         <label class="sr-only" for="search-input">Buscar estação</label>
         <div class="search-control">
-          <input id="search-input" name="search" type="search" placeholder="Digite sua estação preferida"
+          <input id="search-input" name="search" type="search" placeholder="Busque sua estação preferida"
             autocomplete="off" />
           <button type="submit">Buscar</button>
         </div>
@@ -83,7 +77,8 @@
         </button>
 
         <div class="volume-control">
-          <button class="volume-button" type="button" aria-label="Controle de volume" aria-haspopup="true" aria-expanded="false">
+          <button class="volume-button" type="button" aria-label="Controle de volume" aria-haspopup="true"
+            aria-expanded="false">
             <span class="volume-icon" aria-hidden="true"></span>
           </button>
           <div class="volume-panel" role="region" aria-label="Ajuste de volume">
@@ -104,7 +99,7 @@
     </section>
 
     <section id="sobre" class="info-section">
-      <h2>FFM</h2>
+      <h2>FFM Station</h2>
       <p>
         Um player simples e direto para ouvir rádios online de todo o Brasil.
         Busque por nome, estado ou estilo musical e curta ao vivo, sem instalar nada.
@@ -122,16 +117,17 @@
   </main>
 
   <!-- Modal / Pop-up de Instalação PWA (Mobile) -->
-  <div class="pwa-install-overlay" id="pwa-install-overlay" role="dialog" aria-modal="true" aria-labelledby="pwa-install-title" hidden>
+  <div class="pwa-install-overlay" id="pwa-install-overlay" role="dialog" aria-modal="true"
+    aria-labelledby="pwa-install-title" hidden>
     <div class="pwa-install-sheet" id="pwa-install-sheet">
       <div class="pwa-sheet-handle" aria-hidden="true"></div>
       <button class="pwa-close-btn" id="pwa-close-btn" type="button" aria-label="Fechar pop-up">&times;</button>
-      
+
       <div class="pwa-header">
-        <img src="logo.png" alt="FFM Rádios" class="pwa-app-icon" />
+        <img src="logo_FFMSTATION.png" alt="FFM Station" class="pwa-app-icon" />
         <div class="pwa-app-info">
           <div class="pwa-title-row">
-            <h3 id="pwa-install-title">FFM Rádios</h3>
+            <h3 id="pwa-install-title">FFM Station</h3>
             <span class="pwa-badge">APP</span>
           </div>
           <p class="pwa-app-desc">Rádios do Brasil ao vivo no celular</p>
@@ -140,7 +136,8 @@
 
       <div class="pwa-body">
         <p class="pwa-message">
-          Adicione o <strong>FFM</strong> à tela inicial do seu celular para ouvir como um aplicativo: acesso em 1 toque e tela cheia sem barras do navegador!
+          Adicione o <strong>FFM Station</strong> à tela inicial do seu celular para ouvir como um aplicativo: acesso em
+          1 toque e tela cheia sem barras do navegador!
         </p>
 
         <ul class="pwa-benefits">
@@ -165,11 +162,23 @@
             <div class="pwa-ios-steps">
               <div class="pwa-ios-step">
                 <span class="step-num">1</span>
-                <span>Toque no botão <strong>Compartilhar</strong> (<svg class="ios-share-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>) na barra inferior do Safari</span>
+                <span>Toque no botão <strong>Compartilhar</strong> (<svg class="ios-share-icon" viewBox="0 0 24 24"
+                    width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                    stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                    <polyline points="16 6 12 2 8 6" />
+                    <line x1="12" y1="2" x2="12" y2="15" />
+                  </svg>) na barra inferior do Safari</span>
               </div>
               <div class="pwa-ios-step">
                 <span class="step-num">2</span>
-                <span>Role a lista e toque em <strong>"Adicionar à Tela de Início"</strong> (<svg class="ios-add-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>)</span>
+                <span>Role a lista e toque em <strong>"Adicionar à Tela de Início"</strong> (<svg class="ios-add-icon"
+                    viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <line x1="12" y1="8" x2="12" y2="16" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                  </svg>)</span>
               </div>
               <div class="pwa-ios-step">
                 <span class="step-num">3</span>
