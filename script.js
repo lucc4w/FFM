@@ -343,7 +343,7 @@ function updateMediaSession(station) {
     title:   station.name,
     artist:  `${location} • ${genre}`,
     artwork: [
-      { src: station.favicon || "https://ffm.lucc4w.space/FFM_Station.png", sizes: "512x512", type: "image/png" },
+      { src: station.favicon || "icon-512.png", sizes: "512x512", type: "image/png" },
     ],
   });
 
