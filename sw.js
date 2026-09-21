@@ -1,11 +1,14 @@
-const CACHE_NAME = "ffm-station-v3";
+const CACHE_NAME = "ffm-station-v4";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./script.js",
   "./manifest.json",
-  "./logo_FFMSTATION.png"
+  "./logo_FFMSTATION.png",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-512-maskable.png"
 ];
 
 self.addEventListener("install", (event) => {
