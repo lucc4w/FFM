@@ -44,6 +44,19 @@ const playerStationTitle = document.querySelector("#player-station-title");
 const liveStatusText     = document.querySelector("#live-status-text");
 
 audio.volume = Number(volumeSlider.value) / 100;
+let lastAudibleVolume = audio.volume || 0.4;
+
+function updateVolumeButton() {
+  const muted = audio.muted || audio.volume === 0;
+  volumeButton.classList.toggle("is-muted", muted);
+  volumeButton.setAttribute("aria-pressed", String(muted));
+  const label = muted ? "Desmutar rádio" : "Mutar rádio";
+  volumeButton.setAttribute("aria-label", label);
+  volumeButton.title = label;
+}
+
+audio.addEventListener("volumechange", updateVolumeButton);
+updateVolumeButton();
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
 function setStatus(message, type = "") {
@@ -405,28 +418,30 @@ nextButton.addEventListener("click", () => moveStation(1));
 if (volumeButton && volumeControl) {
   volumeButton.addEventListener("click", (e) => {
     e.stopPropagation();
-    const willOpen = !volumeControl.classList.contains("is-open");
-    if (willOpen) {
-      volumeControl.classList.add("is-open");
-      volumeButton.setAttribute("aria-expanded", "true");
+    if (audio.muted || audio.volume === 0) {
+      if (audio.volume === 0) {
+        audio.volume = lastAudibleVolume;
+        volumeSlider.value = Math.round(audio.volume * 100);
+        volumeValue.textContent = `${volumeSlider.value}%`;
+      }
+      audio.muted = false;
     } else {
-      volumeControl.classList.remove("is-open");
-      volumeButton.setAttribute("aria-expanded", "false");
-      volumeButton.blur();
+      lastAudibleVolume = audio.volume;
+      audio.muted = true;
     }
+    updateVolumeButton();
+    volumeControl.classList.add("is-open");
   });
 
   document.addEventListener("click", (e) => {
     if (!volumeControl.contains(e.target)) {
       volumeControl.classList.remove("is-open");
-      volumeButton.setAttribute("aria-expanded", "false");
     }
   });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && volumeControl.classList.contains("is-open")) {
       volumeControl.classList.remove("is-open");
-      volumeButton.setAttribute("aria-expanded", "false");
       volumeButton.focus();
     }
   });
@@ -436,7 +451,9 @@ volumeSlider.addEventListener("input", () => {
   const volume = Number(volumeSlider.value);
   audio.volume = volume / 100;
   audio.muted  = volume === 0;
+  if (volume > 0) lastAudibleVolume = audio.volume;
   volumeValue.textContent = `${volume}%`;
+  updateVolumeButton();
 });
 
 loadMoreBtn.addEventListener("click", loadMoreStations);

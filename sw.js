@@ -1,4 +1,4 @@
-const CACHE_NAME = "ffm-station-v4";
+const CACHE_NAME = "ffm-station-v5";
 const STATIC_ASSETS = [
   "./",
   "./index.html",

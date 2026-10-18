@@ -593,6 +593,11 @@ input[type="range"] {
   height: 1.5rem;
 }
 
+.volume-button.is-muted .volume-icon {
+  opacity: 0.55;
+  background: linear-gradient(135deg, transparent 44%, var(--red-bright) 45%, var(--red-bright) 55%, transparent 56%);
+}
+
 .volume-icon::before {
   content: "";
   position: absolute;
