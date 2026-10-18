@@ -571,6 +571,13 @@ input[type="range"] {
   transition: width 200ms ease, background 200ms ease;
 }
 
+/* Aguarda o ponteiro permanecer sobre o volume antes de abrir o controle.
+   Foco pelo teclado e clique continuam com resposta imediata. */
+.volume-control:hover:not(:focus-within):not(.is-open),
+.volume-control:hover:not(:focus-within):not(.is-open) .volume-panel {
+  transition-delay: 500ms;
+}
+
 .volume-control:hover,
 .volume-control:focus-within,
 .volume-control.is-open {
